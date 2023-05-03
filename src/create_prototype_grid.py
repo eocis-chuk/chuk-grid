@@ -85,7 +85,7 @@ class BNG(object):
         ds["eastings"] = e_da
         ds.attrs["comment"] = f"prototype EOCIS CHUK grid at {spacing_m}m resolution"
         ds.attrs["institution"] = "EOCIS CHUK"
-        ds.attrs["creation_date"] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")  # 2019-09-02T15:19:26
+        ds.attrs["creation_date"] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         return ds
 
 
@@ -101,10 +101,17 @@ if __name__ == '__main__':
     parser.add_argument("--max-northing", help="minimum northing (metres)", default=1249500)
     parser.add_argument("--min-easting", help="minimum easting (metres)", default=-199500)
     parser.add_argument("--max-easting", help="maximum easting (metres)", default=699500)
+    parser.add_argument("--precision", help="set output precision to single or double", default="double")
 
     args = parser.parse_args()
 
     ds = BNG.create_grid(min_n=args.min_northing, min_e=args.min_easting,
                          max_n=args.max_northing, max_e=args.max_easting,
                          spacing_m=args.resolution)
-    ds.to_netcdf(args.output_path)
+
+    precision = "float32" if args.precision == "single" else "float64"
+
+    ds.to_netcdf(args.output_path, encoding={
+        "latitude":  {"dtype": precision, "zlib": True, "complevel": 5},
+        "longitude": {"dtype": precision, "zlib": True, "complevel": 5}
+    })
