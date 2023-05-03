@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
     # default extent taken from tas_hadukgrid_uk_1km_ann-30y_198101-201012.nc
     parser.add_argument("output_path", help="path to write the output netcdf4 file to")
-    parser.add_argument("--resolution", help="grid resolution in metres", default=1000)
+    parser.add_argument("--resolution", type=int, help="grid resolution in metres", default=1000)
     parser.add_argument("--min-northing", help="minimum northing (metres)", default=-199500)
     parser.add_argument("--max-northing", help="minimum northing (metres)", default=1249500)
     parser.add_argument("--min-easting", help="minimum easting (metres)", default=-199500)
