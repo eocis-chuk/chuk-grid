@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 #     create prototype EOCIS high resolution lat-lon grids for the British Isles
@@ -23,70 +24,56 @@ import pyproj
 import datetime
 
 
-class BNG(object):
+def create_grid(min_n, min_e, max_n, max_e, spacing_m):
+    """
+    Create an xarray Dataset describing a grid on EPSG:27700
 
-    @staticmethod
-    def create_grid(min_n, min_e, max_n, max_e, spacing_m):
-        """
-        Create an xarray Dataset describing a grid on EPSG:27700
+    :param min_n: minimum BNG northing value (m) of area extent
+    :param min_e: minimum BNG easting value (m) of area extent
+    :param max_n: maximum BNG northing value (m) of area extent
+    :param max_e: maximum BNG easting value (m) of area extent
+    :param spacing_m: grid spacing (m)
 
-        :param min_n: minimum BNG northing value (m) of area extent
-        :param min_e: minimum BNG easting value (m) of area extent
-        :param max_n: maximum BNG northing value (m) of area extent
-        :param max_e: maximum BNG easting value (m) of area extent
-        :param spacing_m: grid spacing (m)
+    :return: xarray dataset consisting of the following arrays
 
-        :return: xarray dataset consisting of the following arrays
+    latitude    (nj,ni) array of WGS84 latitude values calculated via pyproj
+    longitude   (nj,ni) array of WGS84 longitude values calculated via pyproj
+    northings   (nj) array contiaining BNG northings
+    easting     (ni) array containing BNG eastings
+    """
 
-        latitude    (nj,ni) array of WGS84 latitude values calculated via pyproj
-        longitude   (nj,ni) array of WGS84 longitude values calculated via pyproj
-        northings   (nj) array contiaining BNG northings
-        easting     (ni) array containing BNG eastings
-        """
-        n_list = []
-        n = min_n
-        idx = 0
-        while n <= max_n:
-            n_list.append(n)
-            idx += 1
-            n = min_n + spacing_m * idx
+    # Northings from north to south
+    n_val = np.linspace(max_n, min_n, int((max_n-min_n)/spacing_m)+1)
+    e_val = np.linspace(min_e, max_e, int((max_e-min_e)/spacing_m)+1)
 
-        e_list = []
-        e = min_e
-        idx = 0
-        while e <= max_e:
-            e_list.append(e)
-            idx += 1
-            e = min_e + spacing_m * idx
+    shape = len(n_val), len(e_val)
+    northings = np.broadcast_to(n_val[None].T, shape)
+    eastings = np.broadcast_to(e_val, shape)
 
-        n_val = np.flip(np.array(n_list, dtype=np.float64))  # arrange from north to south
-        e_val = np.array(e_list, dtype=np.float64)
+    transformer = pyproj.Transformer.from_crs(27700, 4326)
+    lats, lons = transformer.transform(eastings, northings)
 
-        n_da = xr.DataArray(data=n_val, dims=("n",)).expand_dims({"e": len(e_list)}).transpose("n", "e")
-        e_da = xr.DataArray(data=e_val, dims=("e",)).expand_dims({"n": len(n_list)})
+    ds = xr.Dataset({
+            'lat': (['y', 'x'], lats),
+            'lon': (['y', 'x'], lons),
+            'crsOSGB': ([], np.int32(0), pyproj.Proj(27700).crs.to_cf())
+        },
+        coords={
+            'x': e_val,
+            'y': n_val,
+        })
 
-        northings = n_da.values.flatten()
-        eastings = e_da.values.flatten()
+    ds.lat.attrs.update(standard_name='latitude', units='degrees_north')
+    ds.lon.attrs.update(standard_name='longitude', units='degrees_east')
+    ds.x.attrs.update(long_name='Easting', standard_name='projection_x_coordinate', units='m')
+    ds.y.attrs.update(long_name='Northing', standard_name='projection_y_coordinate', units='m')
 
-        transformer = pyproj.Transformer.from_crs(27700, 4326)
-        r = transformer.transform(eastings, northings)
-        lats = r[0]
-        lons = r[1]
+    ds.attrs.update(
+        title = f"prototype EOCIS CHUK grid at {spacing_m}m resolution",
+        institution = "EOCIS CHUK",
+        date_created = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
 
-        lats_da = xr.DataArray(data=np.reshape(lats, (len(n_list), len(e_list))), dims=("nj", "ni"))
-        lons_da = xr.DataArray(data=np.reshape(lons, (len(n_list), len(e_list))), dims=("nj", "ni"))
-        n_da = xr.DataArray(data=n_val, dims=("nj",))
-        e_da = xr.DataArray(data=e_val, dims=("ni",))
-
-        ds = xr.Dataset()
-        ds["latitude"] = lats_da
-        ds["longitude"] = lons_da
-        ds["northings"] = n_da
-        ds["eastings"] = e_da
-        ds.attrs["comment"] = f"prototype EOCIS CHUK grid at {spacing_m}m resolution"
-        ds.attrs["institution"] = "EOCIS CHUK"
-        ds.attrs["creation_date"] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        return ds
+    return ds
 
 
 if __name__ == '__main__':
@@ -105,13 +92,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ds = BNG.create_grid(min_n=args.min_northing, min_e=args.min_easting,
-                         max_n=args.max_northing, max_e=args.max_easting,
-                         spacing_m=args.resolution)
+    ds = create_grid(min_n=args.min_northing, min_e=args.min_easting,
+                     max_n=args.max_northing, max_e=args.max_easting,
+                     spacing_m=args.resolution)
 
     precision = "float32" if args.precision == "single" else "float64"
 
     ds.to_netcdf(args.output_path, encoding={
-        "latitude":  {"dtype": precision, "zlib": True, "complevel": 5},
-        "longitude": {"dtype": precision, "zlib": True, "complevel": 5}
+        "lat": {"dtype": precision, "zlib": True, "complevel": 5},
+        "lon": {"dtype": precision, "zlib": True, "complevel": 5}
     })
