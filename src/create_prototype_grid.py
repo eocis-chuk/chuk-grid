@@ -53,6 +53,8 @@ def create_grid(min_n, min_e, max_n, max_e, spacing_m):
     transformer = pyproj.Transformer.from_crs(27700, 4326)
     lats, lons = transformer.transform(eastings, northings)
 
+    print("Lat/Lon Bounding Box: Lat: %.4f to %.4f, Lon: %.4f to %.4f" % (np.min(lats),np.max(lats),np.min(lons),np.max(lons)))
+
     ds = xr.Dataset({
             'lat': (['y', 'x'], lats),
             'lon': (['y', 'x'], lons),
