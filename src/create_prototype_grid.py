@@ -87,7 +87,7 @@ if __name__ == '__main__':
     parser.add_argument("output_path", help="path to write the output netcdf4 file to")
     parser.add_argument("--resolution", type=int, help="grid resolution in metres", default=1000)
     parser.add_argument("--min-northing", type=int, help="minimum northing (metres)", default=-199500)
-    parser.add_argument("--max-northing", type=int, help="minimum northing (metres)", default=1249500)
+    parser.add_argument("--max-northing", type=int, help="maximum northing (metres)", default=1249500)
     parser.add_argument("--min-easting", type=int, help="minimum easting (metres)", default=-199500)
     parser.add_argument("--max-easting", type=int, help="maximum easting (metres)", default=699500)
     parser.add_argument("--precision", help="set output precision to single or double", default="double")
