@@ -24,7 +24,7 @@ import pyproj
 import datetime
 
 
-def create_grid(min_n, min_e, max_n, max_e, spacing_m):
+def create_grid(min_n, min_e, max_n, max_e, spacing_m, version):
     """
     Create an xarray Dataset describing a grid on EPSG:27700
 
@@ -33,13 +33,14 @@ def create_grid(min_n, min_e, max_n, max_e, spacing_m):
     :param max_n: maximum BNG northing value (m) of area extent
     :param max_e: maximum BNG easting value (m) of area extent
     :param spacing_m: grid spacing (m)
+    :param version: version string to add as an attribute
 
     :return: xarray dataset consisting of the following arrays
 
     latitude    (nj,ni) array of WGS84 latitude values calculated via pyproj
     longitude   (nj,ni) array of WGS84 longitude values calculated via pyproj
     northings   (nj) array contiaining BNG northings
-    easting     (ni) array containing BNG eastings
+    eastings     (ni) array containing BNG eastings
     """
 
     # Northings from north to south
@@ -70,10 +71,13 @@ def create_grid(min_n, min_e, max_n, max_e, spacing_m):
     ds.x.attrs.update(long_name='Easting', standard_name='projection_x_coordinate', units='m')
     ds.y.attrs.update(long_name='Northing', standard_name='projection_y_coordinate', units='m')
 
+
     ds.attrs.update(
         title = f"prototype EOCIS CHUK grid at {spacing_m}m resolution",
         institution = "EOCIS CHUK",
-        date_created = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
+        date_created = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        version = version
+    )
 
     return ds
 
@@ -83,20 +87,23 @@ if __name__ == '__main__':
 
     parser = ArgumentParser()
 
-    # default extent taken from tas_hadukgrid_uk_1km_ann-30y_198101-201012.nc
+    # default extent to encompass bounding box from https://eocis.org/wp-content/uploads/2023/05/EOCIS-CHUK-Format-AO-For-Issue.pdf
+    # Min.Lat 47.5°N Min.Long 12.6°W(-12.6°)
+    # Max.Lat 61.3°N Max.Long 3.4°E
     parser.add_argument("output_path", help="path to write the output netcdf4 file to")
     parser.add_argument("--resolution", type=int, help="grid resolution in metres", default=1000)
-    parser.add_argument("--min-northing", type=int, help="minimum northing (metres)", default=-199500)
-    parser.add_argument("--max-northing", type=int, help="maximum northing (metres)", default=1249500)
-    parser.add_argument("--min-easting", type=int, help="minimum easting (metres)", default=-199500)
-    parser.add_argument("--max-easting", type=int, help="maximum easting (metres)", default=699500)
+    parser.add_argument("--min-northing", type=int, help="minimum northing (metres)", default=-267000)
+    parser.add_argument("--max-northing", type=int, help="maximum northing (metres)", default=1315000)
+    parser.add_argument("--min-easting", type=int, help="minimum easting (metres)", default=-398000)
+    parser.add_argument("--max-easting", type=int, help="maximum easting (metres)", default=807000)
     parser.add_argument("--precision", help="set output precision to single or double", default="double")
+    parser.add_argument("--version", help="set the version of the grid as an attribute in the output file", default="0.2 (provisional)")
 
     args = parser.parse_args()
 
     ds = create_grid(min_n=args.min_northing, min_e=args.min_easting,
                      max_n=args.max_northing, max_e=args.max_easting,
-                     spacing_m=args.resolution)
+                     spacing_m=args.resolution, version=args.version)
 
     precision = "float32" if args.precision == "single" else "float64"
 

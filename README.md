@@ -6,10 +6,11 @@ Prototype grids will be replaced with an official version (expected later in 202
 
 ## installation
 
-Requires packages xarray, pyproj and netcdf4.  Tested with Python 3.10
+Requires packages xarray, pyproj and netcdf4.  
 
 ```
-pip install -r requirements.txt
+conda env create -f environment.yml
+conda activate pyproj_env
 ```
 
 ## running
@@ -28,7 +29,7 @@ python src/create_protoype_grid.py output.nc --resolution 10000
 
 ```
 usage: create_prototype_grid.py [-h] [--resolution RESOLUTION] [--min-northing MIN_NORTHING] [--max-northing MAX_NORTHING] [--min-easting MIN_EASTING]
-                                [--max-easting MAX_EASTING] [--precision PRECISION]
+                                [--max-easting MAX_EASTING] [--precision PRECISION] [--version VERSION]
                                 output_path
 
 positional arguments:
@@ -48,4 +49,6 @@ options:
                         maximum easting (metres)
   --precision PRECISION
                         set output precision to single or double
+  --version VERSION
+                        set the version of the grid as an attribute in the output file
 ```
