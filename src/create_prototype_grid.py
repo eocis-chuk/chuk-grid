@@ -87,17 +87,17 @@ if __name__ == '__main__':
 
     parser = ArgumentParser()
 
-    # default extent to encompass bounding box from https://eocis.org/wp-content/uploads/2023/05/EOCIS-CHUK-Format-AO-For-Issue.pdf
+    # default extent to somewhat (but not completely) encompass bounding box from https://eocis.org/wp-content/uploads/2023/05/EOCIS-CHUK-Format-AO-For-Issue.pdf
     # Min.Lat 47.5°N Min.Long 12.6°W(-12.6°)
     # Max.Lat 61.3°N Max.Long 3.4°E
     parser.add_argument("output_path", help="path to write the output netcdf4 file to")
     parser.add_argument("--resolution", type=int, help="grid resolution in metres", default=1000)
     parser.add_argument("--min-northing", type=int, help="minimum northing (metres)", default=-267000)
-    parser.add_argument("--max-northing", type=int, help="maximum northing (metres)", default=1315000)
-    parser.add_argument("--min-easting", type=int, help="minimum easting (metres)", default=-398000)
-    parser.add_argument("--max-easting", type=int, help="maximum easting (metres)", default=807000)
+    parser.add_argument("--max-northing", type=int, help="maximum northing (metres)", default=1250000)
+    parser.add_argument("--min-easting", type=int, help="minimum easting (metres)", default=-332000)
+    parser.add_argument("--max-easting", type=int, help="maximum easting (metres)", default=765000)
     parser.add_argument("--precision", help="set output precision to single or double", default="double")
-    parser.add_argument("--version", help="set the version of the grid as an attribute in the output file", default="0.2 (provisional)")
+    parser.add_argument("--version", help="set the version of the grid as an attribute in the output file", default="0.3 (provisional)")
 
     args = parser.parse_args()
 
