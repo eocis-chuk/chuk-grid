@@ -6,6 +6,7 @@ import pyproj
 import numpy as np
 
 # http://cfconventions.org/cf-conventions/
+# https://cfchecker.ncas.ac.uk/
 
 parser = argparse.ArgumentParser()
 parser.add_argument("input_path",help="path to input CHUK file")
