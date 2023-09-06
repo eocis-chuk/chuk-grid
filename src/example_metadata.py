@@ -80,12 +80,12 @@ encoding={
     },
     "lat": {
         "chunksizes":[500,500],
-        "dtype":"float32",
+        "dtype":"double",
         "zlib":True,"complevel":5
     },
     "lon": {
         "chunksizes":[500,500],
-        "dtype":"float32",
+        "dtype":"double",
         "zlib":True,"complevel":5
     }
 }

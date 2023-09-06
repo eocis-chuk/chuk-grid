@@ -24,6 +24,28 @@ import pyproj
 import datetime
 
 
+def check_bnds(bnds,j=3,i=6):
+    """Perform a sanity check on a 2d bounds matrix according to follwing psuedo-code
+
+    For 0 < j < n and 0 < i < m,
+      If cells (j,i) and (j,i+1) are contiguous, then
+        bnd(j,i,1)=bnd(j,i+1,0)
+        bnd(j,i,2)=bnd(j,i+1,3)
+      If cells (j,i) and (j+1,i) are contiguous, then
+        bnd(j,i,3)=bnd(j+1,i,0) and bnd(j,i,2)=bnd(j+1,i,1)
+
+    (from http://cfconventions.org/cf-conventions/cf-conventions.html#cell-boundaries)"""
+    if bnds[j, i, 1] != bnds[j, i + 1, 0]:
+        print(bnds[j, i, 1],bnds[j, i + 1, 0])
+        raise Exception("check_bounds A")
+    if bnds[j, i, 2] != bnds[j, i + 1, 3]:
+        raise Exception("check_bounds B")
+    if bnds[j, i, 3] != bnds[j + 1, i, 0]:
+        raise Exception("check_bounds C")
+    if bnds[j, i, 2] != bnds[j + 1, i, 1]:
+        raise Exception("check_bounds D")
+
+
 def create_grid(min_n, min_e, max_n, max_e, spacing_m, version):
     """
     Create an xarray Dataset describing a grid on EPSG:27700
@@ -43,22 +65,56 @@ def create_grid(min_n, min_e, max_n, max_e, spacing_m, version):
     eastings     (ni) array containing BNG eastings
     """
 
-    # Northings from north to south
-    n_val = np.linspace(max_n, min_n, int((max_n-min_n)/spacing_m)+1)
-    e_val = np.linspace(min_e, max_e, int((max_e-min_e)/spacing_m)+1)
+    # Northings from north to south (decreasing)
+    n_val = np.linspace(max_n, min_n, int((max_n-min_n)/spacing_m)+1, dtype=np.int32)
+    n_bnds = np.zeros((len(n_val),2), dtype=np.int32)
+    n_bnds[:,0] = n_val + spacing_m/2
+    n_bnds[:,1] = n_val - spacing_m/2
+
+    # Eastings from west to east (increasing)
+    e_val = np.linspace(min_e, max_e, int((max_e-min_e)/spacing_m)+1, dtype=np.int32)
+    e_bnds = np.zeros((len(e_val),2), dtype=np.int32)
+    e_bnds[:,0] = e_val - spacing_m/2
+    e_bnds[:,1] = e_val + spacing_m/2
 
     shape = len(n_val), len(e_val)
+
     northings = np.broadcast_to(n_val[None].T, shape)
     eastings = np.broadcast_to(e_val, shape)
+
+    n_northings = np.broadcast_to(n_bnds[:,0][None].T, shape)
+    s_northings = np.broadcast_to(n_bnds[:,1][None].T, shape)
+    w_eastings = np.broadcast_to(e_bnds[:, 0], shape)
+    e_eastings = np.broadcast_to(e_bnds[:, 1], shape)
 
     transformer = pyproj.Transformer.from_crs(27700, 4326)
     lats, lons = transformer.transform(eastings, northings)
 
+    # http://cfconventions.org/cf-conventions/cf-conventions.html#cell-boundaries
+    latlon_bnds_shape = len(n_val), len(e_val), 4 # last dimension orders corners as NW, NE, SE, SW
+
+    lat_bnds = np.zeros(latlon_bnds_shape)
+    lon_bnds = np.zeros(latlon_bnds_shape)
+
+    for (idx,e,n) in [(0,w_eastings, n_northings),(1,e_eastings, n_northings),(2,e_eastings,s_northings),(3,w_eastings,s_northings)]:
+        print(f"Creating bounds for index {idx}")
+        lats1, lons1 = transformer.transform(e, n)
+        lat_bnds[..., idx] = lats1
+        lon_bnds[..., idx] = lons1
+
     print("Lat/Lon Bounding Box: Lat: %.4f to %.4f, Lon: %.4f to %.4f" % (np.min(lats),np.max(lats),np.min(lons),np.max(lons)))
+
+    # sanity check some bounds according to the CF doc
+    for bnds in [lat_bnds, lon_bnds]:
+        check_bnds(bnds)
 
     ds = xr.Dataset({
             'lat': (['y', 'x'], lats),
             'lon': (['y', 'x'], lons),
+            'x_bnds': (['x','bnds'], e_bnds),
+            'y_bnds': (['y','bnds'], n_bnds),
+            'lat_bnds': (['y', 'x', 'latlon_bnds'], lat_bnds),
+            'lon_bnds': (['y', 'x', 'latlon_bnds'], lon_bnds),
             'crsOSGB': ([], np.int32(0), pyproj.Proj(27700).crs.to_cf())
         },
         coords={
@@ -66,17 +122,21 @@ def create_grid(min_n, min_e, max_n, max_e, spacing_m, version):
             'y': n_val,
         })
 
-    ds.lat.attrs.update(standard_name='latitude', units='degrees_north')
-    ds.lon.attrs.update(standard_name='longitude', units='degrees_east')
-    ds.x.attrs.update(long_name='Easting', standard_name='projection_x_coordinate', units='m')
-    ds.y.attrs.update(long_name='Northing', standard_name='projection_y_coordinate', units='m')
-
+    ds.lat.attrs.update(standard_name='latitude', units='degrees_north',bounds='lat_bnds')
+    ds.lon.attrs.update(standard_name='longitude', units='degrees_east',bounds='lon_bnds')
+    ds.x.attrs.update(long_name='Easting', standard_name='projection_x_coordinate', units='m',bounds="x_bnds")
+    ds.y.attrs.update(long_name='Northing', standard_name='projection_y_coordinate', units='m',bounds="y_bnds")
+    ds.x_bnds.attrs.update(long_name='Easting boundaries', units='m')
+    ds.y_bnds.attrs.update(long_name='Northing boundaries', units='m')
+    ds.lon_bnds.attrs.update(long_name='Longitude cell boundaries', units='degrees_east')
+    ds.lat_bnds.attrs.update(long_name='Latitude cell boundaries', units='degrees_north')
 
     ds.attrs.update(
         title = f"prototype EOCIS CHUK grid at {spacing_m}m resolution",
         institution = "EOCIS CHUK",
         date_created = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-        version = version
+        version = version,
+        Convention = "CF-1.8"
     )
 
     return ds
@@ -97,7 +157,7 @@ if __name__ == '__main__':
     parser.add_argument("--min-easting", type=int, help="minimum easting (metres)", default=-332000)
     parser.add_argument("--max-easting", type=int, help="maximum easting (metres)", default=765000)
     parser.add_argument("--precision", help="set output precision to single or double", default="double")
-    parser.add_argument("--version", help="set the version of the grid as an attribute in the output file", default="0.3 (provisional)")
+    parser.add_argument("--version", help="set the version of the grid as an attribute in the output file", default="0.4 (provisional)")
 
     args = parser.parse_args()
 
@@ -109,5 +169,9 @@ if __name__ == '__main__':
 
     ds.to_netcdf(args.output_path, encoding={
         "lat": {"dtype": precision, "zlib": True, "complevel": 5},
-        "lon": {"dtype": precision, "zlib": True, "complevel": 5}
+        "lat_bnds": {"dtype": precision, "zlib": True, "complevel": 5, "_FillValue":None},
+        "x_bnds": {"_FillValue": None},
+        "lon": {"dtype": precision, "zlib": True, "complevel": 5},
+        "lon_bnds": {"dtype": precision, "zlib": True, "complevel": 5, "_FillValue":None},
+        "y_bnds": {"_FillValue": None},
     })
