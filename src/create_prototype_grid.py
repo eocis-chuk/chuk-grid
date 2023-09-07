@@ -156,7 +156,7 @@ if __name__ == '__main__':
     parser.add_argument("--max-northing", type=int, help="maximum northing (metres)", default=1250000)
     parser.add_argument("--min-easting", type=int, help="minimum easting (metres)", default=-332000)
     parser.add_argument("--max-easting", type=int, help="maximum easting (metres)", default=765000)
-    parser.add_argument("--precision", help="set output precision to single or double", default="double")
+    parser.add_argument("--precision", help="set output precision to single or double", default="single")
     parser.add_argument("--version", help="set the version of the grid as an attribute in the output file", default="0.4 (provisional)")
 
     args = parser.parse_args()

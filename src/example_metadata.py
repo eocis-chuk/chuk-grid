@@ -22,10 +22,12 @@ ds = xr.open_dataset(args.input_path)
 
 ds['crsWGS84'] = xr.DataArray(np.int32(0), dims=[], attrs=pyproj.Proj(4326).crs.to_cf())
 
+spatial_resolution = ds["x"].data[1]-ds["x"].data[0]
+
 ds.attrs["summary"] = "A summary of this dataset"
 ds.attrs["license"] = "Creative Commons Licence by attribution (https://creativecommons.org/licenses/by/4.0/)"
 ds.attrs["uuid"] = uuid
-ds.attrs["spatial_resolution"] = "100 m"
+ds.attrs["spatial_resolution"] = f"{spatial_resolution} m"
 ds.attrs["history"] = "describe the history of this product"
 ds.attrs["title"] = "title for this dataset"
 ds.attrs["comment"] = "a useful comment about this dataset"
@@ -80,14 +82,28 @@ encoding={
     },
     "lat": {
         "chunksizes":[500,500],
-        "dtype":"double",
+        "dtype":"float32",
         "zlib":True,"complevel":5
     },
     "lon": {
         "chunksizes":[500,500],
-        "dtype":"double",
+        "dtype":"float32",
         "zlib":True,"complevel":5
-    }
+    },
+    "lat_bnds": {
+        "chunksizes":[500,500,4],
+        "dtype":"float32",
+        "zlib":True,"complevel":5,
+        "_FillValue": None
+    },
+    "lon_bnds": {
+        "chunksizes":[500,500,4],
+        "dtype":"float32",
+        "zlib":True,"complevel":5,
+        "_FillValue": None
+    },
+    "x_bnds": {"_FillValue": None},
+    "y_bnds": {"_FillValue": None}
 }
 
 ds.to_netcdf(args.output_path,encoding=encoding)
