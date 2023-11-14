@@ -1,8 +1,6 @@
-# prototype-grid
+# chuk-grid
 
-Code to define a prototype 100m CHUK grid on EPSG:27700
-
-Prototype grids will be replaced with an official version (expected later in 2023)
+Code to construct a (at 100m and other resolutions) CHUK grid on EPSG:27700 and export it to NetCDF4
 
 ## installation
 
@@ -11,14 +9,15 @@ Requires packages xarray, pyproj and netcdf4.
 ```
 conda env create -f environment.yml
 conda activate pyproj_env
+pip install -e .
 ```
 
 ## running
 
 ```
-# generate grid at 10km resolution
+# generate grid at 1km resolution
 
-python src/create_protoype_grid.py output.nc --resolution 10000
+create_chuk_grid output.nc --resolution 1000
 ```
 
 ## todo
@@ -28,7 +27,7 @@ python src/create_protoype_grid.py output.nc --resolution 10000
 ## documentation
 
 ```
-usage: create_prototype_grid.py [-h] [--resolution RESOLUTION] [--min-northing MIN_NORTHING] [--max-northing MAX_NORTHING] [--min-easting MIN_EASTING]
+usage: create_chuk_grid [-h] [--resolution RESOLUTION] [--min-northing MIN_NORTHING] [--max-northing MAX_NORTHING] [--min-easting MIN_EASTING]
                                 [--max-easting MAX_EASTING] [--precision PRECISION] [--version VERSION]
                                 output_path
 

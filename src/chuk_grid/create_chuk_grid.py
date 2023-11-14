@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 # -*- coding: utf-8 -*-
 
 #     create prototype EOCIS high resolution lat-lon grids for the British Isles
@@ -151,7 +152,7 @@ def create_grid(min_n, min_e, max_n, max_e, spacing_m, version, include_bounds):
     return ds
 
 
-if __name__ == '__main__':
+def main():
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
@@ -192,3 +193,6 @@ if __name__ == '__main__':
         })
 
     ds.to_netcdf(args.output_path, encoding=encoding)
+
+if __name__ == '__main__':
+    main()

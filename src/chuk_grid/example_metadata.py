@@ -1,5 +1,24 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+#     create prototype EOCIS high resolution lat-lon grids for the British Isles
+#
+#     Copyright (C) 2023  EOCIS and National Centre for Earth Observation (NCEO)
+#
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import xarray as xr
-import numpy as np
 import argparse
 import uuid
 import pyproj
@@ -31,7 +50,7 @@ ds.attrs["spatial_resolution"] = f"{spatial_resolution} m"
 ds.attrs["history"] = "describe the history of this product"
 ds.attrs["title"] = "title for this dataset"
 ds.attrs["comment"] = "a useful comment about this dataset"
-ds.attrs["Conventions"] = "CF-1.8"
+ds.attrs["Conventions"] = "CF-1.10"
 
 ds.attrs["creator_url"] = "the creator's web URL"
 ds.attrs["creator_name"] = "the creator's name"

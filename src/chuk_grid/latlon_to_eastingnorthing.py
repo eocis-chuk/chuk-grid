@@ -18,13 +18,10 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import xarray as xr
 import numpy as np
 import pyproj
-import datetime
 
-
-def print_eastings_northings(min_lat, min_lon, max_lat, max_lon):
+def calculate_eastings_northings(min_lat, min_lon, max_lat, max_lon):
     """
     Get the BNG eastings/northings bounding box that encloses the given lat/lon box
 
@@ -51,8 +48,7 @@ def print_eastings_northings(min_lat, min_lon, max_lat, max_lon):
     min_e = 1000 * np.floor(np.min(eastings) / 1000)
     max_e = 1000 * np.ceil(np.max(eastings) / 1000)
 
-    print("E/N Bounding Box: N: %.0f to %.0f, E: %.0f to %.0f" % (min_n,max_n,min_e,max_e))
-
+    return min_e, max_e, min_n, max_n
 
 
 if __name__ == '__main__':
@@ -67,6 +63,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    print_eastings_northings(min_lat=args.min_lat, min_lon=args.min_lon,
+    min_e, max_e, min_n, max_n = calculate_eastings_northings(min_lat=args.min_lat, min_lon=args.min_lon,
                      max_lat=args.max_lat, max_lon=args.max_lon)
+
+    print("E/N Bounding Box: N: %.0f to %.0f, E: %.0f to %.0f" % (min_n,max_n,min_e,max_e))
 
