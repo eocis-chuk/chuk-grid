@@ -161,19 +161,19 @@ def main():
     # Min.Lat 47.5°N Min.Long 12.6°W(-12.6°)
     # Max.Lat 61.3°N Max.Long 3.4°E
     parser.add_argument("output_path", help="path to write the output netcdf4 file to")
-    parser.add_argument("--resolution", type=int, help="grid resolution in metres", default=1000)
+    parser.add_argument("--resolution", type=int, help="grid resolution in metres", default=100)
     parser.add_argument("--min-northing", type=int, help="minimum northing (metres)", default=-267000)
     parser.add_argument("--max-northing", type=int, help="maximum northing (metres)", default=1250000)
     parser.add_argument("--min-easting", type=int, help="minimum easting (metres)", default=-332000)
     parser.add_argument("--max-easting", type=int, help="maximum easting (metres)", default=765000)
     parser.add_argument("--precision", help="set output precision to single or double", default="single")
-    parser.add_argument("--version", help="set the version of the grid as an attribute in the output file", default="0.4 (provisional)")
+    parser.add_argument("--version", help="set the version of the grid as an attribute in the output file", default="1.0")
     parser.add_argument("--include-bounds", action="store_true", help="include lat/lon bnds in the generated grid")
 
     args = parser.parse_args()
 
-    ds = create_grid(min_n=args.min_northing, min_e=args.min_easting,
-                     max_n=args.max_northing, max_e=args.max_easting,
+    ds = create_grid(min_n=args.min_northing+args.resolution//2, min_e=args.min_easting+args.resolution//2,
+                     max_n=args.max_northing-args.resolution//2, max_e=args.max_easting-args.resolution//2,
                      spacing_m=args.resolution, version=args.version,
                      include_bounds=args.include_bounds)
 
